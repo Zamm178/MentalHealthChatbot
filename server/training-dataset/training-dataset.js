@@ -2,7 +2,7 @@ const Reply = require("../models/reply-model");
 
 const MENTAL_HEALTH = require("./mental-health-dataset");
 
-const importDataset = () => {
+const importDataset = async () => {
   const symptom = MENTAL_HEALTH.symptom;
 
   const mentalHealthDisorder = MENTAL_HEALTH.disorder;
@@ -28,7 +28,8 @@ const importDataset = () => {
         resource: resource,
       });
 
-      await newReply.save();
+      const data = await newReply.save();
+      console.log(`inserted ${i+1}.`, data.mentalDisorder)
     } catch (err) {
       console.log(err);
     }
