@@ -1,0 +1,133 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "botId": {
+            "type": "string"
+        },
+        "sku": {
+            "type": "string",
+            "defaultValue": "S1",
+            "allowedValues": [
+                "F0",
+                "S1"
+            ]
+        },
+        "appType": {
+            "type": "string",
+            "defaultValue": "multitenant"
+        },
+        "msAppId": {
+            "type": "string"
+        },
+        "msAppPassword": {
+            "type": "string"
+        },
+        "tenantId": {
+            "type": "string"
+        },
+        "msiResourceId": {
+            "type": "string"
+        },
+        "displayName": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "resourceTags": {
+            "type": "object",
+            "defaultValue": {
+                "Microsoft.BotService/botServices": {}
+            }
+        }
+    },
+    "variables": {
+        "location": "[resourceGroup().location]",
+        "uniqueSuffix": "[toLower(substring(uniqueString(resourceGroup().id, 'Microsoft.BotService/bots', parameters('botId')), 0, 6))]",
+        "botDisplayName": "[if(empty(parameters('displayName')), parameters('botId'), parameters('displayName'))]",
+        "keyVaultName": "[concat('bot-secrets-', toLower(substring(uniqueString(resourceGroup().id, resourceGroup().location, 'Microsoft.BotService/bots/keyVaults'), 0, 6)))]",
+        "appPasswordSecret": "[concat('bot-', replace(parameters('botId'), '_', '-'), '-pwd-', variables('uniqueSuffix'))]",
+        "appPasswordSecretId": "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('appPasswordSecret'))]",
+        "empty": {},
+        "createManagedIdentity": "[and(equals(parameters('appType'), 'UserAssignedMSI'), empty(parameters('msAppId')))]",
+        "identityResourceName": "[parameters('botId')]",
+        "identityResourceID": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityResourceName'))]",
+        "botTags": "[if(contains(parameters('resourceTags'), 'Microsoft.BotService/botServices'), parameters('resourceTags')['Microsoft.BotService/botServices'], variables('empty'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "name": "[variables('keyVaultName')]",
+            "location": "[variables('location')]",
+            "apiVersion": "2019-09-01",
+            "properties": {
+                "tenantId": "[subscription().tenantId]",
+                "sku": {
+                    "family": "A",
+                    "name": "Standard"
+                },
+                "accessPolicies": [],
+                "enabledForTemplateDeployment": true
+            },
+            "resources": [
+                {
+                    "type": "secrets",
+                    "name": "[variables('appPasswordSecret')]",
+                    "condition": "[not(empty(parameters('msAppPassword')))]",
+                    "apiVersion": "2019-09-01",
+                    "properties": {
+                        "value": "[parameters('msAppPassword')]"
+                    },
+                    "dependsOn": [
+                        "[variables('keyVaultName')]"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+            "apiVersion": "2018-11-30",
+            "name": "[variables('identityResourceName')]",
+            "location": "[variables('location')]",
+            "properties": {},
+            "condition": "[variables('createManagedIdentity')]"
+        },
+        {
+            "type": "Microsoft.BotService/botServices",
+            "name": "[parameters('botId')]",
+            "kind": "azurebot",
+            "apiVersion": "2018-07-12",
+            "location": "global",
+            "sku": {
+                "name": "[parameters('sku')]"
+            },
+            "tags": "[variables('botTags')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityResourceName'))]"
+            ],
+            "properties": {
+                "displayName": "[variables('botDisplayName')]",
+                "msaAppType": "[parameters('appType')]",
+                "msaAppId": "[if(variables('createManagedIdentity'), reference(variables('identityResourceID')).clientId, parameters('msAppId'))]",
+                "msaAppTenantId": "[if(variables('createManagedIdentity'), reference(variables('identityResourceID')).tenantId, parameters('tenantId'))]",
+                "msaAppMSIResourceId": "[if(variables('createManagedIdentity'), variables('identityResourceID'), parameters('msiResourceId'))]",
+                "openWithHint": "bfcomposer://",
+                "appPasswordHint": "[variables('appPasswordSecretId')]",
+                "endpoint": ""
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets/providers/links",
+            "name": "[concat(variables('keyVaultName'), '/', variables('appPasswordSecret'),  '/Microsoft.Resources/provisioned-for')]",
+            "apiVersion": "2018-02-01",
+            "location": "[variables('location')]",
+            "properties": {
+                "targetId": "[resourceId('Microsoft.BotService/bots', parameters('botId'))]",
+                "sourceId": "[variables('appPasswordSecretId')]"
+            },
+            "dependsOn": [
+                "[variables('keyVaultName')]",
+                "[parameters('botId')]"
+            ]
+        }
+    ]
+}
