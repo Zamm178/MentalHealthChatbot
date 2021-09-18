@@ -3,10 +3,17 @@ const Reply = require('../models/reply-model')
 //Create a resource for set of symptoms
 createReply = async (req, res) => {
   try {
+    const symptoms = req.body.symptoms;
+    const disorder = req.body.disorder;
+    const resource =
+        req.body?.resource ||
+        "https://www.google.com/search?q=" + disorder.replace(" ", "+");
+
     //create a new map instance, symptomArray -> resource
     const newReply = new Reply({
-      symptoms: req.body.symptoms,
-      resource: req.body.resource,
+      symptoms: symptoms,
+      resource: resource,
+      mentalDisorder: disorder
     });
 
     //save reply and respond
@@ -23,7 +30,7 @@ getReply = async (req, res) => {
       const reply = await Reply.findOne({ symptoms: req.body.symptoms });
       !reply && res.status(404).json("resource not found");
   
-      res.status(200).json(reply)
+      res.status(200).json(reply.resource)
     } catch (err) {
       res.status(500).json(err)
     }

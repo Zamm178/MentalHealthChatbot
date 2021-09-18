@@ -5,6 +5,9 @@ const cors = require('cors')
 const db = require('./db')
 const replyRouter = require('./routes/reply-router')
 
+// Run once
+// require('./training-dataset/training-dataset')();
+
 const app = express()
 const apiPort = 3000
 
