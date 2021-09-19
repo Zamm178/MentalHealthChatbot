@@ -35,7 +35,7 @@ function insertMessage() {
     $symptomsArray.push(msg);
     console.log($symptomsArray);
 
-    if ($symptomsArray.length === Fake.length - 12) {
+    if ($symptomsArray.length === Fake.length - 1) {
         var symptoms = $symptomsArray;
       $.ajax({
         type: 'GET',
