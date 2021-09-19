@@ -15,21 +15,22 @@ const importDataset = async () => {
     try {
       const currDisorder = mentalHealthDisorder[i];
 
-      const reply = await Reply.findOne({ mentalDisorder: currDisorder });
-
-      if (reply) continue;
-
       const resource =
         "https://www.google.com/search?q=" + currDisorder.replace(" ", "+");
 
-      const newReply = new Reply({
+      const newReply = {
         mentalDisorder: currDisorder,
         symptoms: symptoms[i],
         resource: resource,
-      });
+      };
 
-      const data = await newReply.save();
-      console.log(`inserted ${i+1}.`, data.mentalDisorder)
+      const data = await Reply.updateOne(
+        { mentalDisorder: currDisorder },
+        newReply,
+        { upsert: true }
+      );
+
+      console.log(`inserted ${i+1}.`, currDisorder)
     } catch (err) {
       console.log(err);
     }

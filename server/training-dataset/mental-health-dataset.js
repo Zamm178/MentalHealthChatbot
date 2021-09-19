@@ -1,15 +1,6 @@
 const MENTAL_HEALTH = {
   resource: "https://www.who.int/news-room/fact-sheets/detail/mental-disorders", // World Health Organization
-
-  cause: [
-    // abnormal-
-    "thoughts",
-    "perceptions",
-    "emotions",
-    "behaviour",
-    "relationships with others",
-  ],
-
+  
   disorder: [
     "depression",
     "bipolar disorder", //"schizophrenia",
@@ -58,8 +49,8 @@ const MENTAL_HEALTH = {
 				cognitive functioning and adaptive behaviour)`,
       `narrow range of interests and activities (that are both unique to the 
 				individual and are carried out repetitively)`,
-
-      "Lower intelligence",
+        
+      "lower intelligence",
       "impaired social behaviour",
       "communication and language",
       "some degree of intellectual disability",
