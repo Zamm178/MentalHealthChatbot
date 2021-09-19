@@ -27,7 +27,7 @@ createReply = async (req, res) => {
 //Get a resource for set of symptoms
 getReply = async (req, res) => {
   try {
-    const symptoms = req.body.symptoms;
+    const symptoms = req.body.symptoms || JSON.parse(req.query.symptoms);
 
     const NO_OF_SYMPTOMS = symptoms.length;
 
